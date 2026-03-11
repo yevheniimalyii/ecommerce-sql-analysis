@@ -1,0 +1,111 @@
+-- ==========================================
+-- E-COMMERCE DATA ANALYSIS PROJECT
+-- Database: ecommerce_db (Kaggle dataset)
+-- Author: Yevhenii
+-- Date: March 2026
+-- ==========================================
+
+-- ==========================================
+-- Query 1: Top 10 Customers by Total Spending
+-- Output file: top_customers.csv
+-- Business question: Who are our most valuable customers?
+-- Key metrics: Total orders, revenue, average order value
+-- ==========================================
+
+SELECT 
+    c.coustomer_key,
+    COUNT(DISTINCT f.payment_key) as total_orders,
+    SUM(f.quantity * f.unit_price) as total_spent,
+    AVG(f.quantity * f.unit_price) as avg_order_value
+FROM fact_table f
+JOIN customer_dim c ON f.coustomer_key = c.coustomer_key
+GROUP BY c.coustomer_key
+ORDER BY total_spent DESC
+LIMIT 10;
+
+
+-- ==========================================
+-- Query 2: Store Performance Comparison
+-- Output file: store_performance.csv
+-- Business question: Which stores generate the most revenue?
+-- Key metrics: Transactions, items sold, revenue, average transaction
+-- ==========================================
+
+SELECT 
+    s.store_key,
+    COUNT(f.payment_key) as total_transactions,
+    SUM(f.quantity) as items_sold,
+    SUM(f.quantity * f.unit_price) as revenue,
+    AVG(f.quantity * f.unit_price) as avg_transaction
+FROM fact_table f
+JOIN store_dim s ON f.store_key = s.store_key
+GROUP BY s.store_key
+ORDER BY revenue DESC;
+
+
+-- ==========================================
+-- Query 3: Product Performance Analysis
+-- Output file: product_performance.csv
+-- Business question: Which products drive the most revenue?
+-- Key metrics: Purchase frequency, quantity sold, total revenue
+-- ==========================================
+
+SELECT 
+    i.item_key,
+    COUNT(f.payment_key) as times_purchased,
+    SUM(f.quantity) as total_quantity_sold,
+    SUM(f.quantity * f.unit_price) as total_revenue
+FROM fact_table f
+JOIN item_dim i ON f.item_key = i.item_key
+GROUP BY i.item_key
+ORDER BY total_revenue DESC
+LIMIT 20;
+
+
+-- ==========================================
+-- Query 4: Monthly Sales Trends
+-- Output file: monthly_trends.csv
+-- Business question: How do sales fluctuate over time?
+-- Key metrics: Monthly transactions, revenue, average transaction value
+-- ==========================================
+
+SELECT 
+    t.time_key,
+    COUNT(f.payment_key) as transactions,
+    SUM(f.quantity * f.unit_price) as monthly_revenue,
+    AVG(f.quantity * f.unit_price) as avg_transaction_value
+FROM fact_table f
+JOIN time_dim t ON f.time_key = t.time_key
+GROUP BY t.time_key
+ORDER BY t.time_key;
+
+
+-- ==========================================
+-- Query 5: Customer Shopping Patterns (Multi-table Analysis)
+-- Output file: payment_patterns.csv
+-- Business question: How do customers shop across different stores and payment methods?
+-- Key metrics: Purchase count, total spending by customer/store/payment type
+-- Complex JOIN: 4 tables (fact + customer + store + transaction)
+-- ==========================================
+
+SELECT 
+    c.coustomer_key,
+    s.store_key,
+    tr.trans_type as payment_method,
+    COUNT(f.payment_key) as purchase_count,
+    SUM(f.quantity * f.unit_price) as total_spent
+FROM fact_table f
+JOIN customer_dim c ON f.coustomer_key = c.coustomer_key
+JOIN store_dim s ON f.store_key = s.store_key  
+JOIN trans_dim tr ON f.payment_key = tr.payment_key
+GROUP BY c.coustomer_key, s.store_key, tr.trans_type
+HAVING SUM(f.quantity * f.unit_price) > 100
+ORDER BY total_spent DESC
+LIMIT 50;
+
+
+-- ==========================================
+-- END OF ANALYSIS
+-- Total transactions analyzed: 800,000+
+-- Tables used: fact_table, customer_dim, store_dim, item_dim, time_dim, trans_dim
+-- ==========================================
